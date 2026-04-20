@@ -14,14 +14,15 @@ classdef (Abstract) shareMATLABSessionTestBase < matlab.unittest.TestCase
     end
 
     properties (Constant)
-        MLTBX_PATH_ENV_VAR_NAME = "MATLAB_MCP_CORE_SERVER_MLTBX_PATH"
+        MLTBX_DIR_ENV_VAR_NAME = "MATLAB_MCP_CORE_SERVER_MLTBX_DIR"
     end
 
     methods (TestClassSetup)
         function installMLTBX(testCase)
-            mltbxPath = getenv(testCase.MLTBX_PATH_ENV_VAR_NAME);
-            testCase.fatalAssertNotEmpty(mltbxPath, sprintf("environment variable %s is not set", testCase.MLTBX_PATH_ENV_VAR_NAME))
+            mltbxDir = getenv(testCase.MLTBX_DIR_ENV_VAR_NAME);
+            testCase.fatalAssertNotEmpty(mltbxDir, sprintf("environment variable %s is not set", testCase.MLTBX_DIR_ENV_VAR_NAME))
 
+            mltbxPath = fullfile(mltbxDir, "MATLABMCPCoreServerToolbox.mltbx");
             testCase.fatalAssertEqual(exist(mltbxPath, "file"), 2, sprintf("MLTBX file does not exist at path: %s", mltbxPath))
 
             tbx = matlab.addons.toolbox.installToolbox(mltbxPath, true);

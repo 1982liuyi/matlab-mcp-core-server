@@ -12,6 +12,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/installmatlabaddon"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/orchestrator"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/defaultparameters/selector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/parser"
@@ -19,13 +20,15 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/filesystem/files"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager/matlabrootselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager/matlabstartingdirselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/logger"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/codeanalyzer"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/matlabrootselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager/installationsteps"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
 	directory2 "github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
@@ -173,7 +176,10 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	configuratorConfigurator := configurator.New(factory, serverDefinition, tool, startmatlabsessionTool, stopmatlabsessionTool, evalmatlabcodeTool, tool2, checkmatlabcodeTool, detectmatlabtoolboxesTool, runmatlabfileTool, runmatlabtestfileTool, resource, plaintextlivecodegenerationResource, customFactory)
 	serverServer := server3.New(sdkFactory, loggerFactory, lifecycleSignaler, configuratorConfigurator)
 	orchestratorOrchestrator := orchestrator.New(messageCatalog, lifecycleSignaler, serverDefinition, factory, serverServer, watchdog3, loggerFactory, processManager, directoryFactory)
-	modeSelector := modeselector.New(factory, parserParser, telemetryFactory, watchdogWatchdog, orchestratorOrchestrator, osFacade, lifecycleSignaler, loggerFactory)
+	installationSteps := installationsteps.New()
+	addonManager := addonmanager.New(installationSteps)
+	mode := installmatlabaddon.New(osFacade, messageCatalog, loggerFactory, watchdog3, globalMATLAB, addonManager)
+	modeSelector := modeselector.New(factory, parserParser, telemetryFactory, watchdogWatchdog, orchestratorOrchestrator, osFacade, lifecycleSignaler, loggerFactory, mode)
 	application := &Application{
 		ModeSelector:              modeSelector,
 		MessageCatalog:            messageCatalog,

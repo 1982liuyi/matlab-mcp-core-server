@@ -15,9 +15,10 @@ import (
 const redactedValue = "[REDACTED]"
 
 type validatedArguments struct {
-	versionMode  bool
-	helpMode     bool
-	watchdogMode bool
+	versionMode            bool
+	helpMode               bool
+	watchdogMode           bool
+	installMATLABAddOnMode bool
 
 	baseDirectory    string
 	serverInstanceID string
@@ -108,6 +109,10 @@ func (c *config) HelpMode() bool {
 
 func (c *config) WatchdogMode() bool {
 	return c.watchdogMode
+}
+
+func (c *config) InstallMATLABAddOnMode() bool {
+	return c.installMATLABAddOnMode
 }
 
 func (c *config) UseSingleMATLABSession() bool {
@@ -233,6 +238,11 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 	}
 
 	watchdogMode, err := get(rawCfg, defaultparameters.WatchdogMode())
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	installMATLABAddOnMode, err := get(rawCfg, defaultparameters.InstallMATLABAddOnMode())
 	if err != nil {
 		return validatedArguments{}, err
 	}
@@ -366,10 +376,17 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		return validatedArguments{}, err
 	}
 
+	// If installing the MATLAB Add-On, and displayMode isn't specified
+	// it's a better user experience to not flash the desktop
+	if installMATLABAddOnMode && !slices.Contains(rawCfg.specifiedParameters, defaultparameters.MATLABDisplayMode().GetID()) {
+		displayMode = string(entities.DisplayModeNoDesktop)
+	}
+
 	return validatedArguments{
-		versionMode:  versionMode,
-		helpMode:     helpMode,
-		watchdogMode: watchdogMode,
+		versionMode:            versionMode,
+		helpMode:               helpMode,
+		watchdogMode:           watchdogMode,
+		installMATLABAddOnMode: installMATLABAddOnMode,
 
 		baseDirectory:    baseDirectory,
 		serverInstanceID: serverInstanceID,

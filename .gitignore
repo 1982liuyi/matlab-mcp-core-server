@@ -6,4 +6,4 @@ AGENTS.md
 CLAUDE.md
 .agents
 .claude
-matlab/matlab_mcp_toolkit/mcp/+matlab_mcp/
+matlab/matlab_mcp_toolbox/mcp/+matlab_mcp/

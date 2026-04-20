@@ -5,17 +5,20 @@ package messages
 type messageKey string
 
 const (
+	AddonManagerErrors_InstallFailed                        messageKey = "AddonManagerErrors_InstallFailed"
 	CLIMessages_BaseDirDescription                          messageKey = "CLIMessages_BaseDirDescription"
 	CLIMessages_DisableTelemetryDescription                 messageKey = "CLIMessages_DisableTelemetryDescription"
 	CLIMessages_DisplayModeDescription                      messageKey = "CLIMessages_DisplayModeDescription"
 	CLIMessages_ExtensionFileDescription                    messageKey = "CLIMessages_ExtensionFileDescription"
 	CLIMessages_HelpDescription                             messageKey = "CLIMessages_HelpDescription"
 	CLIMessages_InitializeMATLABOnStartupDescription        messageKey = "CLIMessages_InitializeMATLABOnStartupDescription"
+	CLIMessages_InstallMATLABAddOnDescription               messageKey = "CLIMessages_InstallMATLABAddOnDescription"
 	CLIMessages_InternalUseDescription                      messageKey = "CLIMessages_InternalUseDescription"
 	CLIMessages_LogLevelDescription                         messageKey = "CLIMessages_LogLevelDescription"
 	CLIMessages_MATLABSessionModeDescription                messageKey = "CLIMessages_MATLABSessionModeDescription"
 	CLIMessages_PreferredLocalMATLABRootDescription         messageKey = "CLIMessages_PreferredLocalMATLABRootDescription"
 	CLIMessages_PreferredMATLABStartingDirectoryDescription messageKey = "CLIMessages_PreferredMATLABStartingDirectoryDescription"
+	CLIMessages_SuccessfullyInstalledMATLABAddOn            messageKey = "CLIMessages_SuccessfullyInstalledMATLABAddOn"
 	CLIMessages_UseSingleMATLABSessionDescription           messageKey = "CLIMessages_UseSingleMATLABSessionDescription"
 	CLIMessages_VersionDescription                          messageKey = "CLIMessages_VersionDescription"
 	StartupErrors_BadFlag                                   messageKey = "StartupErrors_BadFlag"

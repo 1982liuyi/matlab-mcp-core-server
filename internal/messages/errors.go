@@ -7,6 +7,22 @@ type Error interface {
 	Error() string
 }
 
+// AddonManagerErrors_InstallFailed_Error defines an error corresponding to the "AddonManagerErrors_InstallFailed" message catalog message
+type AddonManagerErrors_InstallFailed_Error struct {
+}
+
+// Error makes AddonManagerErrors_InstallFailed_Error satisfy the error interface.
+func (e *AddonManagerErrors_InstallFailed_Error) Error() string {
+	return "AddonManagerErrors_InstallFailed_Error"
+}
+
+func (*AddonManagerErrors_InstallFailed_Error) marker() {}
+
+// New_AddonManagerErrors_InstallFailed_Error makes a new AddonManagerErrors_InstallFailed_Error error.
+func New_AddonManagerErrors_InstallFailed_Error() *AddonManagerErrors_InstallFailed_Error {
+	return &AddonManagerErrors_InstallFailed_Error{}
+}
+
 // StartupErrors_BadFlag_Error defines an error corresponding to the "StartupErrors_BadFlag" message catalog message
 type StartupErrors_BadFlag_Error struct {
 	Attr0 string

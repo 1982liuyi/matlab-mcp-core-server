@@ -34,6 +34,10 @@ func TestSelector_DefaultParameters_DescriptionsResolved(t *testing.T) {
 			description: "Version description",
 			times:       1,
 		},
+		messages.CLIMessages_InstallMATLABAddOnDescription: {
+			description: "Install MATLAB Add-On description",
+			times:       1,
+		},
 		messages.CLIMessages_DisableTelemetryDescription: {
 			description: "Disable telemetry description",
 			times:       1,
@@ -126,7 +130,7 @@ func TestSelector_DefaultParameters_MATLABEnabled(t *testing.T) {
 	parameters := sut.DefaultParameters()
 
 	// Assert
-	assert.Len(t, parameters, 21)
+	assert.Len(t, parameters, 22)
 
 	for _, p := range parameters {
 		assert.True(t, p.GetActive(), "parameter %s should be active", p.GetID())
@@ -144,6 +148,7 @@ func TestSelector_DefaultParameters_MATLABDisabled(t *testing.T) {
 	expectedActiveStateByParameterID := map[string]bool{
 		"HelpMode":                           true,
 		"VersionMode":                        true,
+		"InstallMATLABAddOnMode":             true,
 		"DisableTelemetry":                   true,
 		"BaseDir":                            true,
 		"LogLevel":                           true,
@@ -180,7 +185,7 @@ func TestSelector_DefaultParameters_MATLABDisabled(t *testing.T) {
 	parameters := sut.DefaultParameters()
 
 	// Assert
-	assert.Len(t, parameters, 21)
+	assert.Len(t, parameters, 22)
 
 	for _, p := range parameters {
 		expectedState, exists := expectedActiveStateByParameterID[p.GetID()]

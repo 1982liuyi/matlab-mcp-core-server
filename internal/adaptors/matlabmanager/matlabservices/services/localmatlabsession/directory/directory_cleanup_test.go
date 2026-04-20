@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
+	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	mocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,20 +19,21 @@ func TestDirectory_Cleanup_HappyPath(t *testing.T) {
 	mockOSLayer := &mocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	sessionDir := filepath.Join("tmp", "matlab-session-12345")
-
 	mockConfig := &mocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	cleanupTimeout := 100 * time.Millisecond
+	cleanupRetry := 10 * time.Millisecond
 
 	mockConfig.EXPECT().
 		EmbeddedConnectorDetailsTimeout().
 		Return(10 * time.Minute).
 		Once()
 
-	cleanupTimeout := 100 * time.Millisecond
-	cleanupRetry := 10 * time.Millisecond
-
-	dir := directory.NewDirectory(sessionDir, mockOSLayer, mockConfig)
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
 	dir.SetCleanupTimeout(cleanupTimeout)
 	dir.SetCleanupRetry(cleanupRetry)
 
@@ -52,20 +54,21 @@ func TestDirectory_Cleanup_WaitsForRemoveAllToPass(t *testing.T) {
 	mockOSLayer := &mocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	sessionDir := filepath.Join("tmp", "matlab-session-12345")
-
 	mockConfig := &mocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	cleanupTimeout := 100 * time.Millisecond
+	cleanupRetry := 10 * time.Millisecond
 
 	mockConfig.EXPECT().
 		EmbeddedConnectorDetailsTimeout().
 		Return(10 * time.Minute).
 		Once()
 
-	cleanupTimeout := 100 * time.Millisecond
-	cleanupRetry := 10 * time.Millisecond
-
-	dir := directory.NewDirectory(sessionDir, mockOSLayer, mockConfig)
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
 	dir.SetCleanupTimeout(cleanupTimeout)
 	dir.SetCleanupRetry(cleanupRetry)
 
@@ -91,20 +94,21 @@ func TestDirectory_Cleanup_Timesout(t *testing.T) {
 	mockOSLayer := &mocks.MockOSLayer{}
 	defer mockOSLayer.AssertExpectations(t)
 
-	sessionDir := filepath.Join("tmp", "matlab-session-12345")
-
 	mockConfig := &mocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionDir := filepath.Join("tmp", "matlab-session-12345")
+	cleanupTimeout := 100 * time.Millisecond
+	cleanupRetry := 10 * time.Millisecond
 
 	mockConfig.EXPECT().
 		EmbeddedConnectorDetailsTimeout().
 		Return(10 * time.Minute).
 		Once()
 
-	cleanupTimeout := 100 * time.Millisecond
-	cleanupRetry := 10 * time.Millisecond
-
-	dir := directory.NewDirectory(sessionDir, mockOSLayer, mockConfig)
+	dir := directory.NewDirectory(mockLogger, sessionDir, mockOSLayer, mockConfig)
 	dir.SetCleanupTimeout(cleanupTimeout)
 	dir.SetCleanupRetry(cleanupRetry)
 
@@ -127,15 +131,17 @@ func TestDirectory_Cleanup_EmptySessionDir(t *testing.T) {
 	mockConfig := &mocks.MockConfig{}
 	defer mockConfig.AssertExpectations(t)
 
+	mockLogger := testutils.NewInspectableLogger()
+
+	cleanupTimeout := 100 * time.Millisecond
+	cleanupRetry := 10 * time.Millisecond
+
 	mockConfig.EXPECT().
 		EmbeddedConnectorDetailsTimeout().
 		Return(10 * time.Minute).
 		Once()
 
-	cleanupTimeout := 100 * time.Millisecond
-	cleanupRetry := 10 * time.Millisecond
-
-	dir := directory.NewDirectory("", mockOSLayer, mockConfig)
+	dir := directory.NewDirectory(mockLogger, "", mockOSLayer, mockConfig)
 	dir.SetCleanupTimeout(cleanupTimeout)
 	dir.SetCleanupRetry(cleanupRetry)
 

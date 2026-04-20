@@ -9,5 +9,7 @@ go.sum
 SECURITY.md
 *.pem
 tests/mocks/**
-matlab/matlab_mcp_toolkit/MATLABMCPCoreServerToolkit.prj
-matlab/matlab_mcp_toolkit/resources/**
+matlab/matlab_mcp_toolbox/MATLABMCPCoreServerToolbox.prj
+matlab/matlab_mcp_toolbox/resources/**
+*.mltbx
+*.sources-hash

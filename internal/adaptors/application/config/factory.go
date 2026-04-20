@@ -33,6 +33,7 @@ type Config interface {
 	HelpMode() bool
 	VersionMode() bool
 	WatchdogMode() bool
+	InstallMATLABAddOnMode() bool
 
 	BaseDir() string
 	ServerInstanceID() string

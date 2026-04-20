@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
+	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 )
 
 const defaultEmbeddedConnectorDetailsRetry = 500 * time.Millisecond
@@ -31,6 +32,7 @@ type Config interface {
 }
 
 type directory struct {
+	logger     entities.Logger
 	sessionDir string
 	osLayer    OSLayer
 
@@ -40,8 +42,9 @@ type directory struct {
 	cleanupRetry                    time.Duration
 }
 
-func newDirectory(sessionDir string, osLayer OSLayer, config Config) *directory {
+func newDirectory(logger entities.Logger, sessionDir string, osLayer OSLayer, config Config) *directory {
 	return &directory{
+		logger:     logger,
 		sessionDir: sessionDir,
 		osLayer:    osLayer,
 
@@ -74,6 +77,10 @@ func (d *directory) GetEmbeddedConnectorDetails() (string, []byte, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), d.embeddedConnectorDetailsTimeout)
 	defer cancel()
+
+	d.logger.
+		With("timeout", d.embeddedConnectorDetailsTimeout.String()).
+		Debug("Watching for EC details")
 
 	details, err := retry.Retry(ctx, func() (embeddedConnectorDetails, bool, error) {
 		if err := d.checkStartupError(); err != nil {

@@ -23,6 +23,7 @@ func defaultParameters() []entities.Parameter {
 		defaultparameters.HelpMode(),
 		defaultparameters.VersionMode(),
 		defaultparameters.WatchdogMode(),
+		defaultparameters.InstallMATLABAddOnMode(),
 
 		defaultparameters.BaseDir(),
 		defaultparameters.ServerInstanceID(),
@@ -65,6 +66,7 @@ func TestNewConfig_InvalidParameterType(t *testing.T) {
 		{key: defaultparameters.VersionMode().GetID(), invalidValue: "false", expectedType: "bool"},
 		{key: defaultparameters.HelpMode().GetID(), invalidValue: "false", expectedType: "bool"},
 		{key: defaultparameters.WatchdogMode().GetID(), invalidValue: "false", expectedType: "bool"},
+		{key: defaultparameters.InstallMATLABAddOnMode().GetID(), invalidValue: "false", expectedType: "bool"},
 
 		{key: defaultparameters.BaseDir().GetID(), invalidValue: 123, expectedType: "string"},
 		{key: defaultparameters.ServerInstanceID().GetID(), invalidValue: 123, expectedType: "string"},
@@ -134,6 +136,7 @@ func TestNewConfig_MissingParameter(t *testing.T) {
 		defaultparameters.VersionMode(),
 		defaultparameters.HelpMode(),
 		defaultparameters.WatchdogMode(),
+		defaultparameters.InstallMATLABAddOnMode(),
 		defaultparameters.BaseDir(),
 		defaultparameters.ServerInstanceID(),
 		defaultparameters.LogLevel(),
@@ -412,6 +415,41 @@ func TestConfig_InitializeMATLABOnStartup_DisabledWhenNotSingleSession(t *testin
 	assert.False(t, cfg.InitializeMATLABOnStartup(), "InitializeMATLABOnStartup should be false when UseSingleMATLABSession is false")
 }
 
+func TestConfig_ShouldShowMATLABDesktop_DefaultsToNoDesktopInInstallAddOnMode(t *testing.T) {
+	// Arrange
+	mockOSLayer := &configmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockParser := &configmocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockBuildInfo := &configmocks.MockBuildInfo{}
+	defer mockBuildInfo.AssertExpectations(t)
+
+	programName := "testprocess"
+	args := []string{programName}
+
+	parsedArgs := configDefaultParsedArgs()
+	parsedArgs[defaultparameters.InstallMATLABAddOnMode().GetID()] = true
+
+	mockOSLayer.EXPECT().
+		Args().
+		Return(args).
+		Once()
+
+	mockParser.EXPECT().
+		Parse(args[1:]).
+		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
+		Once()
+
+	// Act
+	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
+
+	// Assert
+	require.NoError(t, err)
+	assert.False(t, cfg.ShouldShowMATLABDesktop(), "ShouldShowMATLABDesktop should default to false in install add-on mode")
+}
+
 func TestNewConfig_MATLABSessionConnectionTimeout_FallsBackToDefaultWhenNotPositive(t *testing.T) {
 	testCases := []struct {
 		name    string
@@ -640,6 +678,7 @@ func TestConfig_RecordToLogger_HappyPath(t *testing.T) {
 		defaultparameters.VersionMode(),
 		defaultparameters.BaseDir(),
 		defaultparameters.WatchdogMode(),
+		defaultparameters.InstallMATLABAddOnMode(),
 		defaultparameters.ServerInstanceID(),
 	}
 
@@ -726,6 +765,7 @@ func TestConfig_AsPIISafeJSONString_HappyPath(t *testing.T) {
 	piiSafeParams := []entities.Parameter{
 		defaultparameters.HelpMode(),
 		defaultparameters.VersionMode(),
+		defaultparameters.InstallMATLABAddOnMode(),
 		defaultparameters.DisableTelemetry(),
 		defaultparameters.UseSingleMATLABSession(),
 		defaultparameters.LogLevel(),

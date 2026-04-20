@@ -5,6 +5,7 @@ package system_test
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -202,6 +203,68 @@ func (s *WorkflowTestSuite) TestParallelExperimentationWorkflow() {
 
 	err = sm.StopSession(ctx, session2)
 	s.Require().NoError(err, "should stop session 2")
+}
+
+// TestInstallMATLABAddOnWorkflow verifies the --install-matlab-addon flag
+// correctly installs the MATLAB MCP Core Server Toolbox add-on.
+//
+// Scenario: User installing the MATLAB add-on
+// - Ensures the add-on is not installed (uninstalls if present)
+// - Runs the MCP server with --install-matlab-addon
+// - Verifies the add-on is installed
+// - Always cleans up by uninstalling the add-on
+//
+// CLI flags tested:
+// - --install-matlab-addon (one-shot add-on installation mode)
+func (s *WorkflowTestSuite) TestInstallMATLABAddOnWorkflow() {
+	ctx := s.T().Context()
+	s.T().Setenv("PATH", s.pathEnvWithMATLAB)
+
+	checkInstalledCode := strings.Join([]string{
+		`tbxs = matlab.addons.toolbox.installedToolboxes();`,
+		`if isempty(tbxs), installed = false;`,
+		`else, installed = any(strcmp({tbxs.Name}, 'MATLAB MCP Core Server Toolbox')); end;`,
+		`fprintf('installed=%d\n', installed);`,
+	}, " ")
+
+	uninstallCode := strings.Join([]string{
+		`tbxs = matlab.addons.toolbox.installedToolboxes();`,
+		`if ~isempty(tbxs),`,
+		`idx = find(strcmp({tbxs.Name}, 'MATLAB MCP Core Server Toolbox'));`,
+		`for i = 1:numel(idx), matlab.addons.toolbox.uninstallToolbox(tbxs(idx(i))); end;`,
+		`end`,
+	}, " ")
+
+	runMATLAB := func(code, failMsg string) string {
+		s.T().Helper()
+		cmd := exec.CommandContext(ctx, "matlab", "-batch", code)
+		output, err := cmd.CombinedOutput()
+		s.Require().NoError(err, "%s:\n%s", failMsg, string(output))
+		return string(output)
+	}
+
+	// Always uninstall on cleanup, even if the test fails
+	defer func() {
+		runMATLAB(uninstallCode, "should uninstall add-on on cleanup")
+	}()
+
+	// Step 1: Ensure the add-on is not installed
+	runMATLAB(uninstallCode, "should uninstall add-on if present")
+
+	output := runMATLAB(checkInstalledCode, "should check add-on installation status")
+	s.Contains(output, "installed=0", "add-on should not be installed before test")
+
+	// Step 2: Run MCP server with --install-matlab-addon
+	installCmd := exec.CommandContext(ctx, s.mcpServerPath, //nolint:gosec // Trusted path in tests
+		"--install-matlab-addon",
+	)
+	installCmd.Env = s.defaultEnv
+	installOutput, err := installCmd.CombinedOutput()
+	s.Require().NoError(err, "install-matlab-addon should succeed:\n%s", string(installOutput))
+
+	// Step 3: Verify the add-on is installed
+	output = runMATLAB(checkInstalledCode, "should check add-on installation status")
+	s.Contains(output, "installed=1", "add-on should be installed after running --install-matlab-addon")
 }
 
 // TestWorkflowSuite runs the workflow test suite

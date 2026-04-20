@@ -94,7 +94,7 @@ func (f *Factory) New(logger entities.Logger) (Directory, error) {
 		}
 	}
 
-	return newDirectory(sessionDir, f.osLayer, cfg), nil
+	return newDirectory(logger, sessionDir, f.osLayer, cfg), nil
 }
 
 func (f *Factory) cleanupSessionDirOnError(logger entities.Logger, sessionDir string, cause error) error {

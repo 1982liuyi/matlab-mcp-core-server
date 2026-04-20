@@ -89,6 +89,9 @@ func (m *Starter) StartLocalMATLABSession(ctx context.Context, logger entities.L
 		return embeddedconnector.ConnectionDetails{}, nil, err
 	}
 
+	logger = logger.With("pid", processID)
+	logger.Debug("Started MATLAB process")
+
 	cleanup := func() error {
 		if processCleanup != nil {
 			processCleanup()
@@ -96,9 +99,13 @@ func (m *Starter) StartLocalMATLABSession(ctx context.Context, logger entities.L
 		return sessionDir.Cleanup()
 	}
 
+	logger.Debug("Registering process with watchdog")
+
 	if err = m.watchdog.RegisterProcessPIDWithWatchdog(processID); err != nil {
 		logger.WithError(err).Warn("Failed to register process with watchdog")
 	}
+
+	logger.Debug("Retrieving EC details")
 
 	securePort, certificatePEM, err := sessionDir.GetEmbeddedConnectorDetails()
 	if err != nil {
@@ -107,6 +114,8 @@ func (m *Starter) StartLocalMATLABSession(ctx context.Context, logger entities.L
 		}
 		return embeddedconnector.ConnectionDetails{}, nil, err
 	}
+
+	logger.Debug("Retrieved EC details")
 
 	return embeddedconnector.ConnectionDetails{
 		Host:           "localhost",

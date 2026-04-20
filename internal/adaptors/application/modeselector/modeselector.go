@@ -47,15 +47,20 @@ type LoggerFactory interface {
 	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
+type InstallMATLABAddOn interface {
+	StartAndWaitForCompletion(ctx context.Context) messages.Error
+}
+
 type ModeSelector struct {
-	configFactory     ConfigFactory
-	telemetryFactory  TelemetryFactory
-	watchdogProcess   WatchdogProcess
-	orchestrator      Orchestrator
-	osLayer           OSLayer
-	parser            Parser
-	lifecycleSignaler LifecycleSignaler
-	loggerFactory     LoggerFactory
+	configFactory      ConfigFactory
+	telemetryFactory   TelemetryFactory
+	watchdogProcess    WatchdogProcess
+	orchestrator       Orchestrator
+	osLayer            OSLayer
+	parser             Parser
+	lifecycleSignaler  LifecycleSignaler
+	loggerFactory      LoggerFactory
+	installMATLABAddOn InstallMATLABAddOn
 }
 
 func New(
@@ -67,16 +72,18 @@ func New(
 	osLayer OSLayer,
 	lifecycleSignaler LifecycleSignaler,
 	loggerFactory LoggerFactory,
+	installMATLABAddOn InstallMATLABAddOn,
 ) *ModeSelector {
 	return &ModeSelector{
-		configFactory:     configFactory,
-		parser:            parser,
-		telemetryFactory:  telemetryFactory,
-		watchdogProcess:   watchdogProcess,
-		orchestrator:      orchestrator,
-		osLayer:           osLayer,
-		lifecycleSignaler: lifecycleSignaler,
-		loggerFactory:     loggerFactory,
+		configFactory:      configFactory,
+		parser:             parser,
+		telemetryFactory:   telemetryFactory,
+		watchdogProcess:    watchdogProcess,
+		orchestrator:       orchestrator,
+		osLayer:            osLayer,
+		lifecycleSignaler:  lifecycleSignaler,
+		loggerFactory:      loggerFactory,
+		installMATLABAddOn: installMATLABAddOn,
 	}
 }
 
@@ -119,6 +126,9 @@ func (m *ModeSelector) StartAndWaitForCompletion(ctx context.Context) messages.E
 		return m.shutdownAndReturn(logger, nil)
 	case config.WatchdogMode():
 		return m.toMessagesError(logger, m.watchdogProcess.StartAndWaitForCompletion(ctx))
+	case config.InstallMATLABAddOnMode():
+		err := m.installMATLABAddOn.StartAndWaitForCompletion(ctx)
+		return m.shutdownAndReturn(logger, err)
 	default:
 		return m.toMessagesError(logger, m.orchestrator.StartAndWaitForCompletion(ctx))
 	}

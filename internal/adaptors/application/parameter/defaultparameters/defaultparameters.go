@@ -36,6 +36,19 @@ func VersionMode() *parameter.Parameter[bool] {
 	)
 }
 
+func InstallMATLABAddOnMode() *parameter.Parameter[bool] {
+	return parameter.NewParameter(
+		/* id */ "InstallMATLABAddOnMode",
+		/* flagName */ "install-matlab-addon",
+		/* hiddenFlag */ false,
+		/* envVarName */ "",
+		/* descriptionKey */ messages.CLIMessages_InstallMATLABAddOnDescription,
+		/* defaultValue */ false,
+		/* recordToLog */ false,
+		/* piiSafe */ true,
+	)
+}
+
 func PreferredLocalMATLABRoot() *parameter.Parameter[string] {
 	return parameter.NewParameter(
 		/* id */ "PreferredLocalMATLABRoot",

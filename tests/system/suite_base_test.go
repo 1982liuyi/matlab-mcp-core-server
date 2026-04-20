@@ -23,10 +23,11 @@ import (
 // SystemTestSuite provides common setup for system tests
 type SystemTestSuite struct {
 	suite.Suite
-	mcpServerPath string
-	matlabPath    string
-	testDataDir   string
-	defaultEnv    []string
+	mcpServerPath     string
+	matlabPath        string
+	testDataDir       string
+	pathEnvWithMATLAB string
+	defaultEnv        []string
 }
 
 type SystemSession struct {
@@ -145,6 +146,7 @@ func (s *SystemTestSuite) SetupTest() {
 	s.Require().Contains(path, s.matlabPath, "MATLAB directory should be in the PATH environment variable")
 
 	// Set as the default environment for tests to use
+	s.pathEnvWithMATLAB = path
 	s.defaultEnv = pathcontrol.UpdateEnvEntry(os.Environ(), "PATH", path)
 }
 

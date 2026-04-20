@@ -12,6 +12,9 @@ type LocaleSpecificCatalog interface {
 // The holes in the message are filled from the error attributes.
 func FromError(catalog LocaleSpecificCatalog, err Error) string {
 	switch e := err.(type) {
+	case *AddonManagerErrors_InstallFailed_Error:
+		msg := catalog.Get(AddonManagerErrors_InstallFailed)
+		return msg
 	case *StartupErrors_BadFlag_Error:
 		msg := catalog.Get(StartupErrors_BadFlag)
 		return fmt.Sprintf(

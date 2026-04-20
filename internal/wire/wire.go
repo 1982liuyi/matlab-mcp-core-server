@@ -11,6 +11,7 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/lifecyclesignaler"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/installmatlabaddon"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/orchestrator"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/defaultparameters/selector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/parameter/parser"
@@ -18,13 +19,15 @@ import (
 	files "github.com/matlab/matlab-mcp-core-server/internal/adaptors/filesystem/files"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager/matlabrootselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/globalmatlab/sessionmanager/matlabstartingdirselector"
 	httpclient "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/client"
 	httpserver "github.com/matlab/matlab-mcp-core-server/internal/adaptors/http/server"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/logger"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/codeanalyzer"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlab/matlabrootselector"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager/installationsteps"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession"
 	localmatlabsessiondirectory "github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory"
@@ -53,13 +56,13 @@ import (
 	startmatlabsessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/startmatlabsession"
 	stopmatlabsessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/multisession/stopmatlabsession"
 	checkmatlabcodesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/checkmatlabcode"
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom"
+	customloader "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom/loader"
+	customvalidator "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom/loader/validator"
 	detectmatlabtoolboxessinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/detectmatlabtoolboxes"
 	evalmatlabcodesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/evalmatlabcode"
 	runmatlabfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabfile"
 	runmatlabtestfilesinglesessiontool "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/runmatlabtestfile"
-	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom"
-	customloader "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom/loader"
-	customvalidator "github.com/matlab/matlab-mcp-core-server/internal/adaptors/mcp/tools/singlesession/custom/loader/validator"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/messagecatalog"
 	osadaptor "github.com/matlab/matlab-mcp-core-server/internal/adaptors/os"
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/telemetry"
@@ -74,9 +77,9 @@ import (
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/osfacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/facades/registryfacade"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/checkmatlabcode"
+	"github.com/matlab/matlab-mcp-core-server/internal/usecases/detectmatlabtoolboxes"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalcustomtool"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalcustomtool/functioncall"
-	"github.com/matlab/matlab-mcp-core-server/internal/usecases/detectmatlabtoolboxes"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/evalmatlabcode"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/listavailablematlabs"
 	"github.com/matlab/matlab-mcp-core-server/internal/usecases/runmatlabfile"
@@ -128,6 +131,23 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		wire.Bind(new(modeselector.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(modeselector.LifecycleSignaler), new(*lifecyclesignaler.LifecycleSignaler)),
 		wire.Bind(new(modeselector.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(modeselector.InstallMATLABAddOn), new(*installmatlabaddon.Mode)),
+
+		// Install MATLAB Add-On
+		installmatlabaddon.New,
+		wire.Bind(new(installmatlabaddon.OSLayer), new(*osfacade.OsFacade)),
+		wire.Bind(new(installmatlabaddon.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(installmatlabaddon.MessageCatalog), new(*messagecatalog.MessageCatalog)),
+		wire.Bind(new(installmatlabaddon.WatchdogClient), new(*watchdogclient.Watchdog)),
+		wire.Bind(new(installmatlabaddon.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),
+		wire.Bind(new(installmatlabaddon.AddonManager), new(*addonmanager.AddonManager)),
+
+		// Add-On Manager
+		addonmanager.New,
+		wire.Bind(new(addonmanager.InstallationSteps), new(*installationsteps.InstallationSteps)),
+
+		// Add-On Manager Installation Steps
+		installationsteps.New,
 
 		// Telemetry
 		telemetry.NewFactory,

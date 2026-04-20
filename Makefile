@@ -89,25 +89,25 @@ fix-lint:
 
 matlab-lint:
 ifeq ($(OS),Windows_NT)
-	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolkit')); buildtool clean lint;"
+	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean lint;"
 else
-	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolkit')); buildtool clean lint;"
+	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean lint;"
 endif
 
 # Resources
 
 MATLAB_MCP_EMBEDDED_SRC := $(CURDIR)/internal/adaptors/matlabmanager/matlabservices/services/localmatlabsession/directory/matlabfiles/assets/+matlab_mcp
-MATLAB_MCP_TOOLKIT_DST := $(CURDIR)/matlab/matlab_mcp_toolkit/mcp/+matlab_mcp
+MATLAB_MCP_TOOLBOX_DST := $(CURDIR)/matlab/matlab_mcp_toolbox/mcp/+matlab_mcp
 
 sync-matlab-mcp:
 ifeq ($(OS),Windows_NT)
-	@New-Item -ItemType Directory -Force -Path "$(MATLAB_MCP_TOOLKIT_DST)" | Out-Null
-	@Copy-Item "$(MATLAB_MCP_EMBEDDED_SRC)/*.m" "$(MATLAB_MCP_TOOLKIT_DST)/"
+	@New-Item -ItemType Directory -Force -Path "$(MATLAB_MCP_TOOLBOX_DST)" | Out-Null
+	@Copy-Item "$(MATLAB_MCP_EMBEDDED_SRC)/*.m" "$(MATLAB_MCP_TOOLBOX_DST)/"
 else
-	@mkdir -p "$(MATLAB_MCP_TOOLKIT_DST)"
-	@cp "$(MATLAB_MCP_EMBEDDED_SRC)"/*.m "$(MATLAB_MCP_TOOLKIT_DST)/"
+	@mkdir -p "$(MATLAB_MCP_TOOLBOX_DST)"
+	@cp "$(MATLAB_MCP_EMBEDDED_SRC)"/*.m "$(MATLAB_MCP_TOOLBOX_DST)/"
 endif
-	@echo "Synced embedded MATLAB files to toolkit"
+	@echo "Synced embedded MATLAB files to toolbox"
 
 CODING_GUIDELINES_URL := https://raw.githubusercontent.com/matlab/rules/main/matlab-coding-standards.md
 CODING_GUIDELINES_PATH := $(CURDIR)/internal/adaptors/mcp/resources/codingguidelines/assets/codingguidelines.md
@@ -131,12 +131,26 @@ endif
 
 # Building
 
+TOOLS_BIN_DIR :=$(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/tools
+ifeq ($(OS),Windows_NT)
+	SOURCEHASH_BIN :=$(TOOLS_BIN_DIR)/sourcehash.exe
+	MCPB_GEN_BIN := $(TOOLS_BIN_DIR)/mcpb-gen.exe
+else
+	SOURCEHASH_BIN :=$(TOOLS_BIN_DIR)/sourcehash
+	MCPB_GEN_BIN := $(TOOLS_BIN_DIR)/mcpb-gen
+endif
+
 WIN64_BIN_DIR :=$(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/win64
 GLNXA64_BIN_DIR :=$(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/glnxa64
 MACI64_BIN_DIR :=$(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/maci64
 MACA64_BIN_DIR :=$(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/maca64
 ALL_BIN_DIR := $(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/all
+
 MLTBX_DIR :=$(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/mltbx
+EMBEDDED_MLTBX_DIR :=$(CURDIR)/internal/adaptors/matlabmanager/addonmanager/installationsteps/assets/mltbx
+
+SOURCES_HASH_FILE :=$(EMBEDDED_MLTBX_DIR)/.sources-hash
+MATLAB_TOOLBOX_DIR :=$(CURDIR)/matlab/matlab_mcp_toolbox
 
 build: build-for-windows build-for-glnxa64 build-for-maci64 build-for-maca64
 ifeq ($(OS),Windows_NT)
@@ -181,11 +195,51 @@ else
 	GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build $(BUILD_FLAGS) $(LDFLAGS_ARG) -o "$(MACA64_BIN_DIR)/matlab-mcp-core-server" ./cmd/matlab-mcp-core-server
 endif
 
+build-all:
+ifeq ($(OS),Windows_NT)
+	@New-Item -ItemType Directory -Force -Path "$(ALL_BIN_DIR)" | Out-Null
+	@Copy-Item "$(GLNXA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-glnxa64"
+	@Copy-Item "$(MACA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maca64"
+	@Copy-Item "$(MACI64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maci64"
+	@Copy-Item "$(WIN64_BIN_DIR)/matlab-mcp-core-server.exe" "$(ALL_BIN_DIR)/matlab-mcp-core-server-win64.exe"
+else
+	@mkdir -p "$(ALL_BIN_DIR)"
+	@cp "$(GLNXA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-glnxa64"
+	@cp "$(MACA64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maca64"
+	@cp "$(MACI64_BIN_DIR)/matlab-mcp-core-server" "$(ALL_BIN_DIR)/matlab-mcp-core-server-maci64"
+	@cp "$(WIN64_BIN_DIR)/matlab-mcp-core-server.exe" "$(ALL_BIN_DIR)/matlab-mcp-core-server-win64.exe"
+endif
+
+build-tools:
+ifeq ($(OS),Windows_NT)
+	@New-Item -ItemType Directory -Force -Path "$(TOOLS_BIN_DIR)" | Out-Null
+else
+	@mkdir -p "$(TOOLS_BIN_DIR)"
+endif
+	go build -o "$(SOURCEHASH_BIN)" ./cmd/sourcehash
+	go build -o "$(MCPB_GEN_BIN)" ./cmd/mcpb-gen
+
 build-matlab-addon: sync-matlab-mcp
 ifeq ($(OS),Windows_NT)
-	$$env:MATLAB_MCP_CORE_SERVER_MLTBX_DIR='$(MLTBX_DIR)'; matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolkit')); buildtool clean package;"
+	$$env:MATLAB_MCP_CORE_SERVER_MLTBX_DIR='$(MLTBX_DIR)'; matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean package;"
 else
-	MATLAB_MCP_CORE_SERVER_MLTBX_DIR="$(MLTBX_DIR)" matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolkit')); buildtool clean package;"
+	MATLAB_MCP_CORE_SERVER_MLTBX_DIR="$(MLTBX_DIR)" matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean package;"
+endif
+
+update-embedded-matlab-addon: build-tools
+ifeq ($(OS),Windows_NT)
+	$$env:MATLAB_MCP_CORE_SERVER_MLTBX_DIR='$(EMBEDDED_MLTBX_DIR)'; matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean package;"
+	& "$(SOURCEHASH_BIN)" write "$(SOURCES_HASH_FILE)" "$(MATLAB_TOOLBOX_DIR)"
+else
+	MATLAB_MCP_CORE_SERVER_MLTBX_DIR="$(EMBEDDED_MLTBX_DIR)" matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean package;"
+	"$(SOURCEHASH_BIN)" write "$(SOURCES_HASH_FILE)" "$(MATLAB_TOOLBOX_DIR)"
+endif
+
+check-embedded-matlab-addon: build-tools
+ifeq ($(OS),Windows_NT)
+	& "$(SOURCEHASH_BIN)" check "$(SOURCES_HASH_FILE)" "$(MATLAB_TOOLBOX_DIR)"
+else
+	"$(SOURCEHASH_BIN)" check "$(SOURCES_HASH_FILE)" "$(MATLAB_TOOLBOX_DIR)"
 endif
 
 # Testing
@@ -195,9 +249,9 @@ unit-tests:
 
 matlab-unit-tests:
 ifeq ($(OS),Windows_NT)
-	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolkit')); buildtool clean unit-tests;"
+	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean unit-tests;"
 else
-	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolkit')); buildtool clean unit-tests;"
+	matlab -batch "cd(fullfile('$(CURDIR)', 'matlab', 'matlab_mcp_toolbox')); buildtool clean unit-tests;"
 endif
 
 integration-tests:
@@ -212,9 +266,9 @@ system-tests:
 
 matlab-system-tests: build-matlab-addon
 ifeq ($(OS),Windows_NT)
-	$$env:MATLAB_MCP_CORE_SERVER_MLTBX_PATH='$(MLTBX_DIR)/MATLABMCPCoreServerToolkit.mltbx'; matlab -batch "cd(fullfile('$(CURDIR)', 'tests', 'system', 'matlab')); buildtool;"
+	$$env:MATLAB_MCP_CORE_SERVER_MLTBX_DIR='$(MLTBX_DIR)'; matlab -batch "cd(fullfile('$(CURDIR)', 'tests', 'system', 'matlab')); buildtool;"
 else
-	MATLAB_MCP_CORE_SERVER_MLTBX_PATH="$(MLTBX_DIR)/MATLABMCPCoreServerToolkit.mltbx" matlab -batch "cd(fullfile('$(CURDIR)', 'tests', 'system', 'matlab')); buildtool;"
+	MATLAB_MCP_CORE_SERVER_MLTBX_DIR="$(MLTBX_DIR)" matlab -batch "cd(fullfile('$(CURDIR)', 'tests', 'system', 'matlab')); buildtool;"
 endif
 
 ci-unit-tests:
@@ -232,7 +286,7 @@ ci-system-tests:
 	go test $(RACE_FLAG) -timeout 120m -json -count=1 ./tests/system/...
 	@$(CHECK_MATLAB_LEAKS)
 
-# Requires MATLAB_MCP_CORE_SERVER_MLTBX_PATH to be set
+# Requires MATLAB_MCP_CORE_SERVER_MLTBX_DIR to be set
 ci-matlab-system-tests:
 	matlab -batch "cd(fullfile('$(CURDIR)', 'tests', 'system', 'matlab')); buildtool;"
 
@@ -288,16 +342,13 @@ CHECK_MATLAB_LEAKS := $(strip $(CHECK_MATLAB_LEAKS_CMD))
 # MCPB Bundle Configuration
 MCPB_STAGING_DIR := $(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/mcpb
 MCPB_FILENAME := matlab-mcp-core-server.mcpb
-MCPB_GEN_BIN := $(MATLAB_MCP_CORE_SERVER_BUILD_DIR)/mcpb-gen/mcpb-gen
 
 # Generate mcpb sources for bundling
 # Build mcpb-gen first (not go run) to get proper version from debug.ReadBuildInfo()
-mcpb-stage:
+mcpb-stage: build-tools
 ifeq ($(OS),Windows_NT)
 	@echo "Error: MCPB manifest generation is only supported on macOS/Linux"; exit 1
 else
-	@mkdir -p "$(dir $(MCPB_GEN_BIN))"
-	go build -o "$(MCPB_GEN_BIN)" ./cmd/mcpb-gen
 	MCPB_STAGING_DIR="$(MCPB_STAGING_DIR)" "$(MCPB_GEN_BIN)"
 endif
 
@@ -326,8 +377,7 @@ endif
 
 mcpb-clean:
 	@$(call RM_DIR,$(MCPB_STAGING_DIR))
-	@$(call RM_DIR,$(dir $(MCPB_GEN_BIN)))
-	@echo "Removed $(MCPB_STAGING_DIR) and $(dir $(MCPB_GEN_BIN))"
+	@echo "Removed $(MCPB_STAGING_DIR)"
 
 # Development workflow: build, copy to all/, and pack
 mcpb-dev: mcpb-clean build mcpb
