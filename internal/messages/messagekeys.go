@@ -21,6 +21,7 @@ const (
 	CLIMessages_SuccessfullyInstalledMATLABAddOn            messageKey = "CLIMessages_SuccessfullyInstalledMATLABAddOn"
 	CLIMessages_UseSingleMATLABSessionDescription           messageKey = "CLIMessages_UseSingleMATLABSessionDescription"
 	CLIMessages_VersionDescription                          messageKey = "CLIMessages_VersionDescription"
+	StartupErrors_ArgumentNotAllowedInSessionMode           messageKey = "StartupErrors_ArgumentNotAllowedInSessionMode"
 	StartupErrors_BadFlag                                   messageKey = "StartupErrors_BadFlag"
 	StartupErrors_BadSyntax                                 messageKey = "StartupErrors_BadSyntax"
 	StartupErrors_BadValue                                  messageKey = "StartupErrors_BadValue"

@@ -725,6 +725,93 @@ func TestConfig_RecordToLogger_HappyPath(t *testing.T) {
 	}
 }
 
+func TestNewConfig_ExistingSessionMode_DisallowedParameter(t *testing.T) {
+	disallowedParameters := []entities.Parameter{
+		defaultparameters.PreferredLocalMATLABRoot(),
+		defaultparameters.PreferredMATLABStartingDirectory(),
+		defaultparameters.MATLABDisplayMode(),
+	}
+
+	for _, param := range disallowedParameters {
+		t.Run(param.GetID(), func(t *testing.T) {
+			// Arrange
+			mockOSLayer := &configmocks.MockOSLayer{}
+			defer mockOSLayer.AssertExpectations(t)
+
+			mockParser := &configmocks.MockParser{}
+			defer mockParser.AssertExpectations(t)
+
+			mockBuildInfo := &configmocks.MockBuildInfo{}
+			defer mockBuildInfo.AssertExpectations(t)
+
+			programName := "testprocess"
+			args := []string{programName}
+
+			parsedArgs := configDefaultParsedArgs()
+			parsedArgs[defaultparameters.MATLABSessionMode().GetID()] = string(entities.MATLABSessionModeExisting)
+
+			specifiedParameters := []string{param.GetID()}
+
+			mockOSLayer.EXPECT().
+				Args().
+				Return(args).
+				Once()
+
+			mockParser.EXPECT().
+				Parse(args[1:]).
+				Return([]entities.Parameter{}, parsedArgs, specifiedParameters, nil).
+				Once()
+
+			expectedError := messages.New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(
+				param.GetFlagName(),
+				string(entities.MATLABSessionModeExisting),
+			)
+
+			// Act
+			cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
+
+			// Assert
+			require.Equal(t, expectedError, err)
+			assert.Nil(t, cfg)
+		})
+	}
+}
+
+func TestNewConfig_ExistingSessionMode_AllowedWithoutSpecifiedParameters(t *testing.T) {
+	// Arrange
+	mockOSLayer := &configmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockParser := &configmocks.MockParser{}
+	defer mockParser.AssertExpectations(t)
+
+	mockBuildInfo := &configmocks.MockBuildInfo{}
+	defer mockBuildInfo.AssertExpectations(t)
+
+	programName := "testprocess"
+	args := []string{programName}
+
+	parsedArgs := configDefaultParsedArgs()
+	parsedArgs[defaultparameters.MATLABSessionMode().GetID()] = string(entities.MATLABSessionModeExisting)
+
+	mockOSLayer.EXPECT().
+		Args().
+		Return(args).
+		Once()
+
+	mockParser.EXPECT().
+		Parse(args[1:]).
+		Return([]entities.Parameter{}, parsedArgs, []string{}, nil).
+		Once()
+
+	// Act
+	cfg, err := config.NewConfig(mockOSLayer, mockParser, mockBuildInfo)
+
+	// Assert
+	require.NoError(t, err)
+	assert.NotNil(t, cfg)
+}
+
 func TestConfig_AsPIISafeJSONString_HappyPath(t *testing.T) {
 	// Arrange
 	mockOSLayer := &configmocks.MockOSLayer{}

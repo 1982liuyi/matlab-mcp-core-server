@@ -23,6 +23,30 @@ func New_AddonManagerErrors_InstallFailed_Error() *AddonManagerErrors_InstallFai
 	return &AddonManagerErrors_InstallFailed_Error{}
 }
 
+// StartupErrors_ArgumentNotAllowedInSessionMode_Error defines an error corresponding to the "StartupErrors_ArgumentNotAllowedInSessionMode" message catalog message
+type StartupErrors_ArgumentNotAllowedInSessionMode_Error struct {
+	Attr0 string
+	Attr1 string
+}
+
+// Error makes StartupErrors_ArgumentNotAllowedInSessionMode_Error satisfy the error interface.
+func (e *StartupErrors_ArgumentNotAllowedInSessionMode_Error) Error() string {
+	return "StartupErrors_ArgumentNotAllowedInSessionMode_Error"
+}
+
+func (*StartupErrors_ArgumentNotAllowedInSessionMode_Error) marker() {}
+
+// New_StartupErrors_ArgumentNotAllowedInSessionMode_Error makes a new StartupErrors_ArgumentNotAllowedInSessionMode_Error error.
+func New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(
+	attr0 string,
+	attr1 string,
+) *StartupErrors_ArgumentNotAllowedInSessionMode_Error {
+	return &StartupErrors_ArgumentNotAllowedInSessionMode_Error{
+		Attr0: attr0,
+		Attr1: attr1,
+	}
+}
+
 // StartupErrors_BadFlag_Error defines an error corresponding to the "StartupErrors_BadFlag" message catalog message
 type StartupErrors_BadFlag_Error struct {
 	Attr0 string

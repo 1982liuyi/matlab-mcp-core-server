@@ -15,6 +15,13 @@ func FromError(catalog LocaleSpecificCatalog, err Error) string {
 	case *AddonManagerErrors_InstallFailed_Error:
 		msg := catalog.Get(AddonManagerErrors_InstallFailed)
 		return msg
+	case *StartupErrors_ArgumentNotAllowedInSessionMode_Error:
+		msg := catalog.Get(StartupErrors_ArgumentNotAllowedInSessionMode)
+		return fmt.Sprintf(
+			msg,
+			e.Attr0,
+			e.Attr1,
+		)
 	case *StartupErrors_BadFlag_Error:
 		msg := catalog.Get(StartupErrors_BadFlag)
 		return fmt.Sprintf(

@@ -23,6 +23,7 @@ var messages_en_US = messageMap{
 	CLIMessages_SuccessfullyInstalledMATLABAddOn:            `Successfully installed MATLAB Add-On.`,
 	CLIMessages_UseSingleMATLABSessionDescription:           `By default, this MCP server starts a single MATLAB session, and stops the session when the server shuts down. To allow the server to manage multiple MATLAB sessions, set this argument to false. `,
 	CLIMessages_VersionDescription:                          `Display the version of this MCP server.`,
+	StartupErrors_ArgumentNotAllowedInSessionMode:           `Error with supplied arguments: option "%[1]s" is not compatible with MATLAB session mode set to "%[2]s".`,
 	StartupErrors_BadFlag:                                   `Error with supplied arguments: non-existent option %[1]s.%[2]s%[3]s`,
 	StartupErrors_BadSyntax:                                 `Error with supplied arguments: invalid syntax %[1]s.%[2]s%[3]s`,
 	StartupErrors_BadValue:                                  `Error with supplied arguments: invalid value %[1]s for option %[2]s.`,

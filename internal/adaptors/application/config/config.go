@@ -376,13 +376,7 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		return validatedArguments{}, err
 	}
 
-	// If installing the MATLAB Add-On, and displayMode isn't specified
-	// it's a better user experience to not flash the desktop
-	if installMATLABAddOnMode && !slices.Contains(rawCfg.specifiedParameters, defaultparameters.MATLABDisplayMode().GetID()) {
-		displayMode = string(entities.DisplayModeNoDesktop)
-	}
-
-	return validatedArguments{
+	args := validatedArguments{
 		versionMode:            versionMode,
 		helpMode:               helpMode,
 		watchdogMode:           watchdogMode,
@@ -412,7 +406,38 @@ func validateArguments(rawCfg *rawConfig) (validatedArguments, messages.Error) {
 		telemetryCollectorEndpoint:         telemetryCollectorEndpoint,
 		telemetryCollectionInterval:        telemetryCollectionInterval,
 		telemetryCollectorEndpointInsecure: telemetryCollectorEndpointInsecure,
-	}, nil
+	}
+
+	args, err = checkArgumentCompatibilityAndAdjustDefaults(args, rawCfg.specifiedParameters)
+	if err != nil {
+		return validatedArguments{}, err
+	}
+
+	return args, nil
+}
+
+func checkArgumentCompatibilityAndAdjustDefaults(args validatedArguments, specifiedParameters []string) (validatedArguments, messages.Error) {
+	// If installing the MATLAB Add-On, and displayMode isn't specified
+	// it's a better user experience to not flash the desktop
+	if args.installMATLABAddOnMode && !slices.Contains(specifiedParameters, defaultparameters.MATLABDisplayMode().GetID()) {
+		args.displayMode = entities.DisplayModeNoDesktop
+	}
+
+	// If using MATLAB Session Mode `existing`, most of the MATLAB flags are unsupported
+	if args.matlabSessionMode == entities.MATLABSessionModeExisting {
+		disallowedParametersInExistingSessionMode := []entities.Parameter{
+			defaultparameters.PreferredLocalMATLABRoot(),
+			defaultparameters.PreferredMATLABStartingDirectory(),
+			defaultparameters.MATLABDisplayMode(),
+		}
+		for _, parameter := range disallowedParametersInExistingSessionMode {
+			if slices.Contains(specifiedParameters, parameter.GetID()) {
+				return validatedArguments{}, messages.New_StartupErrors_ArgumentNotAllowedInSessionMode_Error(parameter.GetFlagName(), string(entities.MATLABSessionModeExisting))
+			}
+		}
+	}
+
+	return args, nil
 }
 
 func getForKey(args map[string]any, key string) (any, messages.Error) {
