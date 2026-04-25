@@ -103,11 +103,11 @@ func TestSessionDiscoverer_FromSessionDetails_MissingPort(t *testing.T) {
 	result, err := discoverer.FromSessionDetails(mockLogger, sessionJSON)
 
 	// Assert
-	require.Error(t, err)
+	require.ErrorIs(t, err, sessiondiscovery.ErrInvalidSessionDetails)
 	assert.Empty(t, result.Host)
 }
 
-func TestSessionDiscoverer_FromSessionDetails_InvalidPort(t *testing.T) {
+func TestSessionDiscoverer_FromSessionDetails_PortNotANumber(t *testing.T) {
 	// Arrange
 	mockAppDataDirGetter := &mocks.MockAppDataDirGetter{}
 	mockOSLayer := &mocks.MockOSLayer{}
@@ -123,6 +123,101 @@ func TestSessionDiscoverer_FromSessionDetails_InvalidPort(t *testing.T) {
 
 	// Assert
 	require.Error(t, err)
+	assert.Empty(t, result.Host)
+}
+
+func TestSessionDiscoverer_FromSessionDetails_PortNotAnInt(t *testing.T) {
+	// Arrange
+	mockAppDataDirGetter := &mocks.MockAppDataDirGetter{}
+	mockOSLayer := &mocks.MockOSLayer{}
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionJSON := []byte(`{"port":"1.5","certificate":"cert.pem","apiKey":"key","pid":100}`)
+
+	discoverer := sessiondiscovery.New(mockAppDataDirGetter, mockOSLayer)
+
+	// Act
+	result, err := discoverer.FromSessionDetails(mockLogger, sessionJSON)
+
+	// Assert
+	require.Error(t, err)
+	assert.Empty(t, result.Host)
+}
+
+func TestSessionDiscoverer_FromSessionDetails_PortBelowRange(t *testing.T) {
+	// Arrange
+	mockAppDataDirGetter := &mocks.MockAppDataDirGetter{}
+
+	mockOSLayer := &mocks.MockOSLayer{}
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionJSON := marshallSessionDetails(t, map[string]any{
+		"port":        0,
+		"certificate": filepath.Join("path", "to", "cert.pem"),
+		"apiKey":      "key",
+		"pid":         100,
+	})
+
+	discoverer := sessiondiscovery.New(mockAppDataDirGetter, mockOSLayer)
+
+	// Act
+	result, err := discoverer.FromSessionDetails(mockLogger, sessionJSON)
+
+	// Assert
+	require.ErrorIs(t, err, sessiondiscovery.ErrInvalidSessionDetails)
+	assert.Empty(t, result.Host)
+}
+
+func TestSessionDiscoverer_FromSessionDetails_PortAboveRange(t *testing.T) {
+	// Arrange
+	mockAppDataDirGetter := &mocks.MockAppDataDirGetter{}
+
+	mockOSLayer := &mocks.MockOSLayer{}
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionJSON := marshallSessionDetails(t, map[string]any{
+		"port":        65536,
+		"certificate": filepath.Join("path", "to", "cert.pem"),
+		"apiKey":      "key",
+		"pid":         100,
+	})
+
+	discoverer := sessiondiscovery.New(mockAppDataDirGetter, mockOSLayer)
+
+	// Act
+	result, err := discoverer.FromSessionDetails(mockLogger, sessionJSON)
+
+	// Assert
+	require.ErrorIs(t, err, sessiondiscovery.ErrInvalidSessionDetails)
+	assert.Empty(t, result.Host)
+}
+
+func TestSessionDiscoverer_FromSessionDetails_EmptyAPIKey(t *testing.T) {
+	// Arrange
+	mockAppDataDirGetter := &mocks.MockAppDataDirGetter{}
+
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	sessionJSON := marshallSessionDetails(t, map[string]any{
+		"port":        31515,
+		"certificate": "",
+		"apiKey":      "",
+		"pid":         100,
+	})
+
+	discoverer := sessiondiscovery.New(mockAppDataDirGetter, mockOSLayer)
+
+	// Act
+	result, err := discoverer.FromSessionDetails(mockLogger, sessionJSON)
+
+	// Assert
+	require.ErrorIs(t, err, sessiondiscovery.ErrInvalidSessionDetails)
 	assert.Empty(t, result.Host)
 }
 
@@ -155,6 +250,39 @@ func TestSessionDiscoverer_FromSessionDetails_CertificateReadError(t *testing.T)
 
 	// Assert
 	require.ErrorIs(t, err, assert.AnError)
+	assert.Empty(t, result.Host)
+}
+
+func TestSessionDiscoverer_FromSessionDetails_EmptyCertificatePEM(t *testing.T) {
+	// Arrange
+	mockAppDataDirGetter := &mocks.MockAppDataDirGetter{}
+
+	mockOSLayer := &mocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	expectedCertPath := filepath.Join("path", "to", "cert.pem")
+
+	sessionJSON := marshallSessionDetails(t, map[string]any{
+		"port":        31515,
+		"certificate": expectedCertPath,
+		"apiKey":      "test-api-key",
+		"pid":         100,
+	})
+
+	mockOSLayer.EXPECT().
+		ReadFile(expectedCertPath).
+		Return([]byte(""), nil).
+		Once()
+
+	discoverer := sessiondiscovery.New(mockAppDataDirGetter, mockOSLayer)
+
+	// Act
+	result, err := discoverer.FromSessionDetails(mockLogger, sessionJSON)
+
+	// Assert
+	require.ErrorIs(t, err, sessiondiscovery.ErrInvalidSessionDetails)
 	assert.Empty(t, result.Host)
 }
 

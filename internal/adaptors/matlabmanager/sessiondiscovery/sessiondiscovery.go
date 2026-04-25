@@ -4,6 +4,7 @@ package sessiondiscovery
 
 import (
 	"encoding/json"
+	"errors"
 	"path/filepath"
 	"strconv"
 
@@ -12,6 +13,8 @@ import (
 )
 
 const sessionDetailsFileName = "sessionDetails.json"
+
+var ErrInvalidSessionDetails = errors.New("invalid session details")
 
 type AppDataDirGetter interface {
 	AppDataDir() (string, error)
@@ -49,13 +52,30 @@ func (d *SessionDiscoverer) FromSessionDetails(logger entities.Logger, sessionDe
 	}
 
 	port := details.Port.String()
-	if _, err := strconv.Atoi(port); err != nil {
-		return zeroValue, err
+	portAsInt, err := strconv.Atoi(port)
+	if err != nil {
+		logger.Debug("Failed to parse port as int")
+		return zeroValue, ErrInvalidSessionDetails
+	}
+
+	if portAsInt < 1 || portAsInt > 65535 {
+		logger.Debug("Port is out of range")
+		return zeroValue, ErrInvalidSessionDetails
+	}
+
+	if details.APIKey == "" {
+		logger.Debug("Invalid empty API Key")
+		return zeroValue, ErrInvalidSessionDetails
 	}
 
 	certificatePEM, err := d.osLayer.ReadFile(details.Certificate)
 	if err != nil {
 		return zeroValue, err
+	}
+
+	if len(certificatePEM) == 0 {
+		logger.Debug("Invalid empty certificate PEM")
+		return zeroValue, ErrInvalidSessionDetails
 	}
 
 	return embeddedconnector.ConnectionDetails{
