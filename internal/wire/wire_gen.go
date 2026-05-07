@@ -180,7 +180,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 	orchestratorOrchestrator := orchestrator.New(messageCatalog, lifecycleSignaler, serverDefinition, factory, serverServer, watchdog3, loggerFactory, processManager, directoryFactory)
 	installationSteps := installationsteps.New()
 	addonManager := addonmanager.New(installationSteps)
-	mode := setupmatlab.New(osFacade, messageCatalog, loggerFactory, watchdog3, globalMATLAB, addonManager)
+	mode := setupmatlab.New(osFacade, messageCatalog, loggerFactory, directoryFactory, watchdog3, globalMATLAB, addonManager)
 	modeSelector := modeselector.New(factory, parserParser, telemetryFactory, watchdogWatchdog, orchestratorOrchestrator, osFacade, lifecycleSignaler, loggerFactory, mode)
 	application := &Application{
 		ModeSelector:              modeSelector,

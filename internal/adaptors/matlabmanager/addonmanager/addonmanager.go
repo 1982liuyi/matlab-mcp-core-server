@@ -7,13 +7,12 @@ import (
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/time/retry"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
-	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
 
 type InstallationSteps interface {
-	UploadMLTBX(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) (func(), messages.Error)
-	VerifyMLTBXInstallationFile(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error
-	InstallMLTBX(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error
+	UploadMLTBX(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) (func(), error)
+	VerifyMLTBXInstallationFile(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error
+	InstallMLTBX(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error
 }
 
 type AddonManager struct {
@@ -28,7 +27,7 @@ func New(
 	}
 }
 
-func (a *AddonManager) Install(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error {
+func (a *AddonManager) Install(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error {
 	logger.Debug("Installing MATLAB Add-On")
 
 	cleanup, err := a.installationSteps.UploadMLTBX(ctx, logger, client)
@@ -43,7 +42,7 @@ func (a *AddonManager) Install(ctx context.Context, logger entities.Logger, clie
 	}
 
 	// installToolbox sometimes throws strange errors, which go away on retry
-	var lastErr messages.Error
+	var lastErr error
 	_, retryErr := retry.Retry(ctx, func() (struct{}, bool, error) {
 		lastErr = a.installationSteps.InstallMLTBX(ctx, logger, client)
 		if lastErr != nil {
@@ -58,9 +57,8 @@ func (a *AddonManager) Install(ctx context.Context, logger entities.Logger, clie
 			return lastErr
 		}
 		logger.
-			WithError(retryErr).
-			Error("Failed to install MLTBX in MATLAB")
-		return messages.New_AddonManagerErrors_InstallFailed_Error()
+			Debug("Failed to install MLTBX in MATLAB")
+		return retryErr
 	}
 
 	logger.Info("MATLAB Add-On installation complete")

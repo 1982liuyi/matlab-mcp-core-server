@@ -4,11 +4,13 @@ package setupmatlab_test
 
 import (
 	"bytes"
+	"path/filepath"
 	"testing"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/modeselector/modes/setupmatlab"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
+	directorymocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/directory"
 	setupmatlabmocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/application/modeselector/modes/setupmatlab"
 	entitiesmocks "github.com/matlab/matlab-mcp-core-server/mocks/entities"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +28,9 @@ func TestNew_HappyPath(t *testing.T) {
 	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockDirectoryFactory := &setupmatlabmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
 	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
@@ -36,7 +41,7 @@ func TestNew_HappyPath(t *testing.T) {
 	defer mockAddonManager.AssertExpectations(t)
 
 	// Act
-	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockDirectoryFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Assert
 	assert.NotNil(t, mode)
@@ -53,6 +58,12 @@ func TestMode_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockDirectoryFactory := &setupmatlabmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
+	defer mockDirectory.AssertExpectations(t)
+
 	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
@@ -68,11 +79,22 @@ func TestMode_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 
 	expectedCtx := t.Context()
+	expectedLogDir := filepath.Join("tmp", "logs")
 	successMessage := "Successfully installed MATLAB Add-On."
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
+
+	mockDirectory.EXPECT().
+		BaseDir().
+		Return(expectedLogDir).
 		Once()
 
 	mockWatchdogClient.EXPECT().
@@ -105,7 +127,7 @@ func TestMode_StartAndWaitForCompletion_HappyPath(t *testing.T) {
 		Return(&bytes.Buffer{}).
 		Once()
 
-	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockDirectoryFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(expectedCtx)
@@ -125,6 +147,9 @@ func TestMode_StartAndWaitForCompletion_LoggerFactoryError(t *testing.T) {
 	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockDirectoryFactory := &setupmatlabmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
 	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
@@ -139,7 +164,51 @@ func TestMode_StartAndWaitForCompletion_LoggerFactoryError(t *testing.T) {
 		Return(nil, messages.AnError).
 		Once()
 
-	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockDirectoryFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+
+	// Act
+	err := mode.StartAndWaitForCompletion(t.Context())
+
+	// Assert
+	require.ErrorIs(t, err, messages.AnError)
+}
+
+func TestMode_StartAndWaitForCompletion_DirectoryError(t *testing.T) {
+	// Arrange
+	mockOSLayer := &setupmatlabmocks.MockOSLayer{}
+	defer mockOSLayer.AssertExpectations(t)
+
+	mockMessageCatalog := &setupmatlabmocks.MockMessageCatalog{}
+	defer mockMessageCatalog.AssertExpectations(t)
+
+	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
+	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockDirectoryFactory := &setupmatlabmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
+	defer mockWatchdogClient.AssertExpectations(t)
+
+	mockGlobalMATLAB := &setupmatlabmocks.MockGlobalMATLAB{}
+	defer mockGlobalMATLAB.AssertExpectations(t)
+
+	mockAddonManager := &setupmatlabmocks.MockAddonManager{}
+	defer mockAddonManager.AssertExpectations(t)
+
+	mockLogger := testutils.NewInspectableLogger()
+
+	mockLoggerFactory.EXPECT().
+		GetGlobalLogger().
+		Return(mockLogger, nil).
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(nil, messages.AnError).
+		Once()
+
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockDirectoryFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(t.Context())
@@ -159,6 +228,12 @@ func TestMode_StartAndWaitForCompletion_WatchdogStartError(t *testing.T) {
 	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockDirectoryFactory := &setupmatlabmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
+	defer mockDirectory.AssertExpectations(t)
+
 	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
@@ -170,9 +245,21 @@ func TestMode_StartAndWaitForCompletion_WatchdogStartError(t *testing.T) {
 
 	mockLogger := testutils.NewInspectableLogger()
 
+	expectedLogDir := filepath.Join("tmp", "logs")
+
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
+
+	mockDirectory.EXPECT().
+		BaseDir().
+		Return(expectedLogDir).
 		Once()
 
 	mockWatchdogClient.EXPECT().
@@ -180,13 +267,13 @@ func TestMode_StartAndWaitForCompletion_WatchdogStartError(t *testing.T) {
 		Return(assert.AnError).
 		Once()
 
-	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockDirectoryFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(t.Context())
 
 	// Assert
-	expectedError := messages.New_AddonManagerErrors_InstallFailed_Error()
+	expectedError := messages.New_AddonManagerErrors_InstallFailed_Error(expectedLogDir)
 	require.Equal(t, expectedError, err)
 }
 
@@ -201,6 +288,12 @@ func TestMode_StartAndWaitForCompletion_MATLABClientError(t *testing.T) {
 	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
 
+	mockDirectoryFactory := &setupmatlabmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
+	defer mockDirectory.AssertExpectations(t)
+
 	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
 
@@ -213,10 +306,21 @@ func TestMode_StartAndWaitForCompletion_MATLABClientError(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 
 	expectedCtx := t.Context()
+	expectedLogDir := filepath.Join("tmp", "logs")
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
+
+	mockDirectory.EXPECT().
+		BaseDir().
+		Return(expectedLogDir).
 		Once()
 
 	mockWatchdogClient.EXPECT().
@@ -234,13 +338,13 @@ func TestMode_StartAndWaitForCompletion_MATLABClientError(t *testing.T) {
 		Return(nil, assert.AnError).
 		Once()
 
-	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockDirectoryFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(expectedCtx)
 
 	// Assert
-	expectedError := messages.New_AddonManagerErrors_InstallFailed_Error()
+	expectedError := messages.New_AddonManagerErrors_InstallFailed_Error(expectedLogDir)
 	require.Equal(t, expectedError, err)
 }
 
@@ -254,6 +358,12 @@ func TestMode_StartAndWaitForCompletion_AddonManagerInstallError(t *testing.T) {
 
 	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockDirectoryFactory := &setupmatlabmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
+	defer mockDirectory.AssertExpectations(t)
 
 	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
@@ -270,10 +380,21 @@ func TestMode_StartAndWaitForCompletion_AddonManagerInstallError(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 
 	expectedCtx := t.Context()
+	expectedLogDir := filepath.Join("tmp", "logs")
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
+
+	mockDirectory.EXPECT().
+		BaseDir().
+		Return(expectedLogDir).
 		Once()
 
 	mockWatchdogClient.EXPECT().
@@ -293,16 +414,17 @@ func TestMode_StartAndWaitForCompletion_AddonManagerInstallError(t *testing.T) {
 
 	mockAddonManager.EXPECT().
 		Install(expectedCtx, mockLogger.AsMockArg(), mockClient).
-		Return(messages.AnError).
+		Return(assert.AnError).
 		Once()
 
-	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockDirectoryFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(expectedCtx)
 
 	// Assert
-	require.ErrorIs(t, err, messages.AnError)
+	expectedError := messages.New_AddonManagerErrors_InstallFailed_Error(expectedLogDir)
+	require.Equal(t, expectedError, err)
 }
 
 func TestMode_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) {
@@ -315,6 +437,12 @@ func TestMode_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) {
 
 	mockLoggerFactory := &setupmatlabmocks.MockLoggerFactory{}
 	defer mockLoggerFactory.AssertExpectations(t)
+
+	mockDirectoryFactory := &setupmatlabmocks.MockDirectoryFactory{}
+	defer mockDirectoryFactory.AssertExpectations(t)
+
+	mockDirectory := &directorymocks.MockDirectory{}
+	defer mockDirectory.AssertExpectations(t)
 
 	mockWatchdogClient := &setupmatlabmocks.MockWatchdogClient{}
 	defer mockWatchdogClient.AssertExpectations(t)
@@ -331,11 +459,22 @@ func TestMode_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) {
 	mockLogger := testutils.NewInspectableLogger()
 
 	expectedCtx := t.Context()
+	expectedLogDir := filepath.Join("tmp", "logs")
 	successMessage := "Successfully installed MATLAB Add-On."
 
 	mockLoggerFactory.EXPECT().
 		GetGlobalLogger().
 		Return(mockLogger, nil).
+		Once()
+
+	mockDirectoryFactory.EXPECT().
+		Directory().
+		Return(mockDirectory, nil).
+		Once()
+
+	mockDirectory.EXPECT().
+		BaseDir().
+		Return(expectedLogDir).
 		Once()
 
 	mockWatchdogClient.EXPECT().
@@ -368,7 +507,7 @@ func TestMode_StartAndWaitForCompletion_WatchdogStopError(t *testing.T) {
 		Return(&bytes.Buffer{}).
 		Once()
 
-	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
+	mode := setupmatlab.New(mockOSLayer, mockMessageCatalog, mockLoggerFactory, mockDirectoryFactory, mockWatchdogClient, mockGlobalMATLAB, mockAddonManager)
 
 	// Act
 	err := mode.StartAndWaitForCompletion(expectedCtx)

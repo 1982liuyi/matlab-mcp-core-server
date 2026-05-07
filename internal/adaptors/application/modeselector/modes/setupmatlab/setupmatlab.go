@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/application/directory"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
 	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 )
@@ -23,6 +24,10 @@ type LoggerFactory interface {
 	GetGlobalLogger() (entities.Logger, messages.Error)
 }
 
+type DirectoryFactory interface {
+	Directory() (directory.Directory, messages.Error)
+}
+
 type WatchdogClient interface {
 	Start() error
 	Stop() error
@@ -33,33 +38,36 @@ type GlobalMATLAB interface {
 }
 
 type AddonManager interface {
-	Install(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error
+	Install(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error
 }
 
 type Mode struct {
-	osLayer        OSLayer
-	messageCatalog MessageCatalog
-	loggerFactory  LoggerFactory
-	watchdogClient WatchdogClient
-	globalMATLAB   GlobalMATLAB
-	addonManager   AddonManager
+	osLayer          OSLayer
+	messageCatalog   MessageCatalog
+	loggerFactory    LoggerFactory
+	directoryFactory DirectoryFactory
+	watchdogClient   WatchdogClient
+	globalMATLAB     GlobalMATLAB
+	addonManager     AddonManager
 }
 
 func New(
 	osLayer OSLayer,
 	messageCatalog MessageCatalog,
 	loggerFactory LoggerFactory,
+	directoryFactory DirectoryFactory,
 	watchdogClient WatchdogClient,
 	globalMATLAB GlobalMATLAB,
 	addonManager AddonManager,
 ) *Mode {
 	return &Mode{
-		osLayer:        osLayer,
-		messageCatalog: messageCatalog,
-		loggerFactory:  loggerFactory,
-		watchdogClient: watchdogClient,
-		globalMATLAB:   globalMATLAB,
-		addonManager:   addonManager,
+		osLayer:          osLayer,
+		messageCatalog:   messageCatalog,
+		loggerFactory:    loggerFactory,
+		directoryFactory: directoryFactory,
+		watchdogClient:   watchdogClient,
+		globalMATLAB:     globalMATLAB,
+		addonManager:     addonManager,
 	}
 }
 
@@ -69,6 +77,13 @@ func (m *Mode) StartAndWaitForCompletion(ctx context.Context) messages.Error {
 		return messagesErr
 	}
 
+	dir, messagesErr := m.directoryFactory.Directory()
+	if messagesErr != nil {
+		return messagesErr
+	}
+
+	logDir := dir.BaseDir()
+
 	logger.Debug("Starting watchdog")
 
 	err := m.watchdogClient.Start()
@@ -76,7 +91,7 @@ func (m *Mode) StartAndWaitForCompletion(ctx context.Context) messages.Error {
 		logger.
 			WithError(err).
 			Error("Failed to start watchdog")
-		return messages.New_AddonManagerErrors_InstallFailed_Error()
+		return messages.New_AddonManagerErrors_InstallFailed_Error(logDir)
 	}
 	defer func() {
 		logger.Debug("Stopping watchdog")
@@ -96,12 +111,15 @@ func (m *Mode) StartAndWaitForCompletion(ctx context.Context) messages.Error {
 		logger.
 			WithError(err).
 			Error("Failed to get MATLAB Client")
-		return messages.New_AddonManagerErrors_InstallFailed_Error()
+		return messages.New_AddonManagerErrors_InstallFailed_Error(logDir)
 	}
 
-	messagesErr = m.addonManager.Install(ctx, logger, client)
-	if messagesErr != nil {
-		return messagesErr
+	err = m.addonManager.Install(ctx, logger, client)
+	if err != nil {
+		logger.
+			WithError(err).
+			Error("Failed to install MATLAB Add-On")
+		return messages.New_AddonManagerErrors_InstallFailed_Error(logDir)
 	}
 
 	successMessage := m.messageCatalog.Get(messages.CLIMessages_SuccessfullySetupMATLAB)

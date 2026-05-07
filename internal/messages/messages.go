@@ -7,7 +7,7 @@ type messageMap map[messageKey]string
 type localeMap map[localeKey]messageMap
 
 var messages_en_US = messageMap{
-	AddonManagerErrors_InstallFailed:                        `Failed to install MATLAB Add-On. For details, see the MCP server log in your AI application.`,
+	AddonManagerErrors_InstallFailed:                        `Failed to install MATLAB Add-On. For details, see the server log in "%[1]s".`,
 	CLIMessages_BaseDirDescription:                          `The folder where this MCP server stores log files. If not specified, the server uses the default temp folder of your operating system.`,
 	CLIMessages_DisableTelemetryDescription:                 `This MCP server can collect fully anonymized information about your usage of the server and send it to MathWorks. This data collection helps MathWorks improve products and is on by default. To opt out of data collection, set the argument --disable-telemetry to true.`,
 	CLIMessages_DisplayModeDescription:                      `Specify whether to show the MATLAB desktop. Use 'desktop' mode (default) to show the MATLAB desktop or 'nodesktop' mode to use MATLAB only from your AI application, without the MATLAB desktop. `,

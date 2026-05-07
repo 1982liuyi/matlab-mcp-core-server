@@ -8,7 +8,6 @@ import (
 	"context"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
-	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -40,20 +39,18 @@ func (_m *MockInstallationSteps) EXPECT() *MockInstallationSteps_Expecter {
 }
 
 // InstallMLTBX provides a mock function for the type MockInstallationSteps
-func (_mock *MockInstallationSteps) InstallMLTBX(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error {
+func (_mock *MockInstallationSteps) InstallMLTBX(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error {
 	ret := _mock.Called(ctx, logger, client)
 
 	if len(ret) == 0 {
 		panic("no return value specified for InstallMLTBX")
 	}
 
-	var r0 messages.Error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) messages.Error); ok {
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) error); ok {
 		r0 = returnFunc(ctx, logger, client)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(messages.Error)
-		}
+		r0 = ret.Error(0)
 	}
 	return r0
 }
@@ -94,18 +91,18 @@ func (_c *MockInstallationSteps_InstallMLTBX_Call) Run(run func(ctx context.Cont
 	return _c
 }
 
-func (_c *MockInstallationSteps_InstallMLTBX_Call) Return(error messages.Error) *MockInstallationSteps_InstallMLTBX_Call {
-	_c.Call.Return(error)
+func (_c *MockInstallationSteps_InstallMLTBX_Call) Return(err error) *MockInstallationSteps_InstallMLTBX_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockInstallationSteps_InstallMLTBX_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error) *MockInstallationSteps_InstallMLTBX_Call {
+func (_c *MockInstallationSteps_InstallMLTBX_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error) *MockInstallationSteps_InstallMLTBX_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UploadMLTBX provides a mock function for the type MockInstallationSteps
-func (_mock *MockInstallationSteps) UploadMLTBX(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) (func(), messages.Error) {
+func (_mock *MockInstallationSteps) UploadMLTBX(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) (func(), error) {
 	ret := _mock.Called(ctx, logger, client)
 
 	if len(ret) == 0 {
@@ -113,8 +110,8 @@ func (_mock *MockInstallationSteps) UploadMLTBX(ctx context.Context, logger enti
 	}
 
 	var r0 func()
-	var r1 messages.Error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) (func(), messages.Error)); ok {
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) (func(), error)); ok {
 		return returnFunc(ctx, logger, client)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) func()); ok {
@@ -124,12 +121,10 @@ func (_mock *MockInstallationSteps) UploadMLTBX(ctx context.Context, logger enti
 			r0 = ret.Get(0).(func())
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, entities.Logger, entities.MATLABSessionClient) messages.Error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, entities.Logger, entities.MATLABSessionClient) error); ok {
 		r1 = returnFunc(ctx, logger, client)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(messages.Error)
-		}
+		r1 = ret.Error(1)
 	}
 	return r0, r1
 }
@@ -170,31 +165,29 @@ func (_c *MockInstallationSteps_UploadMLTBX_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *MockInstallationSteps_UploadMLTBX_Call) Return(fn func(), error messages.Error) *MockInstallationSteps_UploadMLTBX_Call {
-	_c.Call.Return(fn, error)
+func (_c *MockInstallationSteps_UploadMLTBX_Call) Return(fn func(), err error) *MockInstallationSteps_UploadMLTBX_Call {
+	_c.Call.Return(fn, err)
 	return _c
 }
 
-func (_c *MockInstallationSteps_UploadMLTBX_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) (func(), messages.Error)) *MockInstallationSteps_UploadMLTBX_Call {
+func (_c *MockInstallationSteps_UploadMLTBX_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) (func(), error)) *MockInstallationSteps_UploadMLTBX_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // VerifyMLTBXInstallationFile provides a mock function for the type MockInstallationSteps
-func (_mock *MockInstallationSteps) VerifyMLTBXInstallationFile(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error {
+func (_mock *MockInstallationSteps) VerifyMLTBXInstallationFile(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error {
 	ret := _mock.Called(ctx, logger, client)
 
 	if len(ret) == 0 {
 		panic("no return value specified for VerifyMLTBXInstallationFile")
 	}
 
-	var r0 messages.Error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) messages.Error); ok {
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) error); ok {
 		r0 = returnFunc(ctx, logger, client)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(messages.Error)
-		}
+		r0 = ret.Error(0)
 	}
 	return r0
 }
@@ -235,12 +228,12 @@ func (_c *MockInstallationSteps_VerifyMLTBXInstallationFile_Call) Run(run func(c
 	return _c
 }
 
-func (_c *MockInstallationSteps_VerifyMLTBXInstallationFile_Call) Return(error messages.Error) *MockInstallationSteps_VerifyMLTBXInstallationFile_Call {
-	_c.Call.Return(error)
+func (_c *MockInstallationSteps_VerifyMLTBXInstallationFile_Call) Return(err error) *MockInstallationSteps_VerifyMLTBXInstallationFile_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockInstallationSteps_VerifyMLTBXInstallationFile_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error) *MockInstallationSteps_VerifyMLTBXInstallationFile_Call {
+func (_c *MockInstallationSteps_VerifyMLTBXInstallationFile_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error) *MockInstallationSteps_VerifyMLTBXInstallationFile_Call {
 	_c.Call.Return(run)
 	return _c
 }

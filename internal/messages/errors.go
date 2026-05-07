@@ -9,6 +9,7 @@ type Error interface {
 
 // AddonManagerErrors_InstallFailed_Error defines an error corresponding to the "AddonManagerErrors_InstallFailed" message catalog message
 type AddonManagerErrors_InstallFailed_Error struct {
+	Attr0 string
 }
 
 // Error makes AddonManagerErrors_InstallFailed_Error satisfy the error interface.
@@ -19,8 +20,12 @@ func (e *AddonManagerErrors_InstallFailed_Error) Error() string {
 func (*AddonManagerErrors_InstallFailed_Error) marker() {}
 
 // New_AddonManagerErrors_InstallFailed_Error makes a new AddonManagerErrors_InstallFailed_Error error.
-func New_AddonManagerErrors_InstallFailed_Error() *AddonManagerErrors_InstallFailed_Error {
-	return &AddonManagerErrors_InstallFailed_Error{}
+func New_AddonManagerErrors_InstallFailed_Error(
+	attr0 string,
+) *AddonManagerErrors_InstallFailed_Error {
+	return &AddonManagerErrors_InstallFailed_Error{
+		Attr0: attr0,
+	}
 }
 
 // StartupErrors_ArgumentNotAllowedInSessionMode_Error defines an error corresponding to the "StartupErrors_ArgumentNotAllowedInSessionMode" message catalog message

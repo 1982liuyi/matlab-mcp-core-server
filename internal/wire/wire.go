@@ -138,6 +138,7 @@ func Initialize(serverDefinition ApplicationDefinition) *Application {
 		setupmatlab.New,
 		wire.Bind(new(setupmatlab.OSLayer), new(*osfacade.OsFacade)),
 		wire.Bind(new(setupmatlab.LoggerFactory), new(*logger.Factory)),
+		wire.Bind(new(setupmatlab.DirectoryFactory), new(*directory.Factory)),
 		wire.Bind(new(setupmatlab.MessageCatalog), new(*messagecatalog.MessageCatalog)),
 		wire.Bind(new(setupmatlab.WatchdogClient), new(*watchdogclient.Watchdog)),
 		wire.Bind(new(setupmatlab.GlobalMATLAB), new(*globalmatlab.GlobalMATLAB)),

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager"
-	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	addonmanagermocks "github.com/matlab/matlab-mcp-core-server/mocks/adaptors/matlabmanager/addonmanager"
 	entitiesmocks "github.com/matlab/matlab-mcp-core-server/mocks/entities"
@@ -77,7 +76,7 @@ func TestAddonManager_Install_UploadMLTBXError(t *testing.T) {
 
 	mockInstallationSteps.EXPECT().
 		UploadMLTBX(expectedCtx, mockLogger.AsMockArg(), mockClient).
-		Return(cleanup, messages.AnError).
+		Return(cleanup, assert.AnError).
 		Once()
 
 	manager := addonmanager.New(mockInstallationSteps)
@@ -86,7 +85,7 @@ func TestAddonManager_Install_UploadMLTBXError(t *testing.T) {
 	err := manager.Install(expectedCtx, mockLogger, mockClient)
 
 	// Assert
-	require.ErrorIs(t, err, messages.AnError)
+	require.ErrorIs(t, err, assert.AnError)
 }
 
 func TestAddonManager_Install_VerifyMLTBXInstallationFileError(t *testing.T) {
@@ -109,7 +108,7 @@ func TestAddonManager_Install_VerifyMLTBXInstallationFileError(t *testing.T) {
 
 	mockInstallationSteps.EXPECT().
 		VerifyMLTBXInstallationFile(expectedCtx, mockLogger.AsMockArg(), mockClient).
-		Return(messages.AnError).
+		Return(assert.AnError).
 		Once()
 
 	manager := addonmanager.New(mockInstallationSteps)
@@ -118,7 +117,7 @@ func TestAddonManager_Install_VerifyMLTBXInstallationFileError(t *testing.T) {
 	err := manager.Install(expectedCtx, mockLogger, mockClient)
 
 	// Assert
-	require.ErrorIs(t, err, messages.AnError)
+	require.ErrorIs(t, err, assert.AnError)
 }
 
 func TestAddonManager_Install_InstallRetryExhausted(t *testing.T) {
@@ -146,7 +145,7 @@ func TestAddonManager_Install_InstallRetryExhausted(t *testing.T) {
 
 	mockInstallationSteps.EXPECT().
 		InstallMLTBX(expectedCtx, mockLogger.AsMockArg(), mockClient).
-		Return(messages.AnError).
+		Return(assert.AnError).
 		Times(2)
 
 	manager := addonmanager.New(mockInstallationSteps)
@@ -155,7 +154,7 @@ func TestAddonManager_Install_InstallRetryExhausted(t *testing.T) {
 	err := manager.Install(expectedCtx, mockLogger, mockClient)
 
 	// Assert
-	require.ErrorIs(t, err, messages.AnError)
+	require.ErrorIs(t, err, assert.AnError)
 }
 
 func TestAddonManager_Install_InstallRetrySucceeds(t *testing.T) {
@@ -183,7 +182,7 @@ func TestAddonManager_Install_InstallRetrySucceeds(t *testing.T) {
 
 	mockInstallationSteps.EXPECT().
 		InstallMLTBX(expectedCtx, mockLogger.AsMockArg(), mockClient).
-		Return(messages.AnError).
+		Return(assert.AnError).
 		Once()
 
 	mockInstallationSteps.EXPECT().

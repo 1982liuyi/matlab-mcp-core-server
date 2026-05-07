@@ -8,7 +8,6 @@ import (
 	"context"
 
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
-	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -40,20 +39,18 @@ func (_m *MockAddonManager) EXPECT() *MockAddonManager_Expecter {
 }
 
 // Install provides a mock function for the type MockAddonManager
-func (_mock *MockAddonManager) Install(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error {
+func (_mock *MockAddonManager) Install(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error {
 	ret := _mock.Called(ctx, logger, client)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Install")
 	}
 
-	var r0 messages.Error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) messages.Error); ok {
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, entities.Logger, entities.MATLABSessionClient) error); ok {
 		r0 = returnFunc(ctx, logger, client)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(messages.Error)
-		}
+		r0 = ret.Error(0)
 	}
 	return r0
 }
@@ -94,12 +91,12 @@ func (_c *MockAddonManager_Install_Call) Run(run func(ctx context.Context, logge
 	return _c
 }
 
-func (_c *MockAddonManager_Install_Call) Return(error messages.Error) *MockAddonManager_Install_Call {
-	_c.Call.Return(error)
+func (_c *MockAddonManager_Install_Call) Return(err error) *MockAddonManager_Install_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *MockAddonManager_Install_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) messages.Error) *MockAddonManager_Install_Call {
+func (_c *MockAddonManager_Install_Call) RunAndReturn(run func(ctx context.Context, logger entities.Logger, client entities.MATLABSessionClient) error) *MockAddonManager_Install_Call {
 	_c.Call.Return(run)
 	return _c
 }

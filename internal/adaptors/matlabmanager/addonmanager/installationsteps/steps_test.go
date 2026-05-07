@@ -7,7 +7,6 @@ import (
 
 	"github.com/matlab/matlab-mcp-core-server/internal/adaptors/matlabmanager/addonmanager/installationsteps"
 	"github.com/matlab/matlab-mcp-core-server/internal/entities"
-	"github.com/matlab/matlab-mcp-core-server/internal/messages"
 	"github.com/matlab/matlab-mcp-core-server/internal/testutils"
 	entitiesmocks "github.com/matlab/matlab-mcp-core-server/mocks/entities"
 	"github.com/stretchr/testify/assert"
@@ -67,8 +66,7 @@ func TestInstallationSteps_UploadMLTBX_EvalError(t *testing.T) {
 	cleanup, err := steps.UploadMLTBX(expectedCtx, mockLogger, mockClient)
 
 	// Assert
-	expectedError := messages.New_AddonManagerErrors_InstallFailed_Error()
-	require.Equal(t, expectedError, err)
+	require.ErrorIs(t, err, assert.AnError)
 	assert.NotNil(t, cleanup)
 }
 
@@ -115,8 +113,7 @@ func TestInstallationSteps_VerifyMLTBXInstallationFile_EvalError(t *testing.T) {
 	err := steps.VerifyMLTBXInstallationFile(expectedCtx, mockLogger, mockClient)
 
 	// Assert
-	expectedError := messages.New_AddonManagerErrors_InstallFailed_Error()
-	require.Equal(t, expectedError, err)
+	require.ErrorIs(t, err, assert.AnError)
 }
 
 func TestInstallationSteps_InstallMLTBX_HappyPath(t *testing.T) {
@@ -162,6 +159,5 @@ func TestInstallationSteps_InstallMLTBX_EvalError(t *testing.T) {
 	err := steps.InstallMLTBX(expectedCtx, mockLogger, mockClient)
 
 	// Assert
-	expectedError := messages.New_AddonManagerErrors_InstallFailed_Error()
-	require.Equal(t, expectedError, err)
+	require.ErrorIs(t, err, assert.AnError)
 }
