@@ -18,7 +18,7 @@
   "homepage": "https://www.mathworks.com",
   "documentation": "https://github.com/matlab/matlab-mcp-core-server#readme",
   "support": "https://github.com/matlab/matlab-mcp-core-server/issues",
-  "license": "BSD-3-Clause",
+  "license": "See license at https://github.com/matlab/matlab-mcp-core-server/blob/main/LICENSE.md",
   "keywords": ["matlab", "mathworks"],
   "privacy_policies": ["https://github.com/matlab/matlab-mcp-core-server?tab=readme-ov-file#data-collection"],
   "tools": [],
